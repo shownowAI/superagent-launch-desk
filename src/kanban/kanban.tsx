@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
+import { ClipboardList } from 'lucide-react';
 import { move } from '@dnd-kit/helpers';
 import { DragDropProvider, DragOverlay, type DragStartEvent, type DragOverEvent, type DragEndEvent } from '@dnd-kit/react';
 import { isSortable } from '@dnd-kit/react/sortable';
 import { columns, columnIds } from '../seed-data.mjs';
 import { createBoardStore } from '../board-store.mjs';
+import { buildReleaseChecklist } from '../release-checklist.mjs';
 import { KanbanColumn } from './kanban-column';
 import { TaskCard } from './task-card';
 import type { BoardState, ColumnId, Task } from './types';
@@ -21,6 +23,7 @@ function isTaskDragData(value: unknown): value is TaskDragData {
 export function Kanban() {
   const [store] = useState(() => createBoardStore(window.localStorage));
   const [board, setBoard] = useState<BoardState>(() => store.getBoard());
+  const [showChecklist, setShowChecklist] = useState(false);
   const boardBeforeDrag = useRef(board);
 
   function updateBoard(next: BoardState) {
@@ -54,8 +57,25 @@ export function Kanban() {
       </div>
       <div className="launch-board-toolbar">
         <span className="launch-board-tab">发布看板</span>
-        <span className="launch-board-hint">拖动卡片，更新进度</span>
+        <div className="launch-board-actions">
+          <span className="launch-board-hint">拖动卡片，更新进度</span>
+          <button type="button" className="launch-checklist-button" onClick={() => setShowChecklist(true)}>
+            <ClipboardList size={14} strokeWidth={1.8} />生成发布清单
+          </button>
+        </div>
       </div>
+      {showChecklist && (
+        <section className="launch-checklist" aria-label="发布清单">
+          <div className="launch-checklist-head">
+            <span className="launch-checklist-title">发布清单</span>
+            <div className="launch-checklist-actions">
+              <span className="launch-checklist-hint">点文字可全选复制</span>
+              <button type="button" className="launch-checklist-close" onClick={() => setShowChecklist(false)} aria-label="关闭发布清单">关闭</button>
+            </div>
+          </div>
+          <pre className="launch-checklist-text">{buildReleaseChecklist(board)}</pre>
+        </section>
+      )}
       <DragDropProvider onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <div className="launch-board-scroll">
           <div className="launch-board-grid">
